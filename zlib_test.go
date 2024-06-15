@@ -183,7 +183,7 @@ func TestConcatZlib(t *testing.T) {
 
 		if err1 != nil || err2 != nil {
 			if !errors.Is(err1, err2) {
-				t.Fatalf("expected same error: %v", errors.Join(err1, err2))
+				t.Fatalf("expect same error: %v %v", err1, err2)
 			}
 			break
 		}

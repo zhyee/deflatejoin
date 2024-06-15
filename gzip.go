@@ -10,6 +10,8 @@ import (
 	"hash/crc32"
 	"io"
 	"unsafe"
+
+	"github.com/zhyee/deflatejoin/internal"
 )
 
 /*
@@ -160,7 +162,7 @@ func newGzMerger(w io.Writer) (*gzMerger, error) {
 	if inMemBuf == nil || outMemBuf == nil {
 		errMessage := C.errMessage()
 		return nil, fmt.Errorf("unable to malloc memory for buffer: %s",
-			unsafe.String((*byte)(unsafe.Pointer(errMessage)), int(C.strlen(errMessage))))
+			internal.UnsafeString((*byte)(unsafe.Pointer(errMessage)), int(C.strlen(errMessage))))
 	}
 
 	gm := &gzMerger{
@@ -437,7 +439,7 @@ func NewGzipReader(r io.Reader) (io.ReadCloser, error) {
 	if memIn == nil || memOut == nil {
 		errMessage := C.errMessage()
 		return nil, fmt.Errorf("unable to malloc buffer memory: %s",
-			unsafe.String((*byte)(unsafe.Pointer(errMessage)), int(C.strlen(errMessage))))
+			internal.UnsafeString((*byte)(unsafe.Pointer(errMessage)), int(C.strlen(errMessage))))
 	}
 
 	br := bufio.NewReader(r)

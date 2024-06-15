@@ -6,6 +6,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"github.com/zhyee/deflatejoin/internal"
 	"hash"
 	"hash/adler32"
 	"io"
@@ -246,7 +247,7 @@ func NewZlibReader(r io.Reader) (io.ReadCloser, error) {
 	if zlibInBuf == nil || zlibOutBuf == nil {
 		errMessage := C.errMessage()
 		return nil, fmt.Errorf("unable to malloc buffer memory: %s",
-			unsafe.String((*byte)(unsafe.Pointer(errMessage)), int(C.strlen(errMessage))))
+			internal.UnsafeString((*byte)(unsafe.Pointer(errMessage)), int(C.strlen(errMessage))))
 	}
 
 	br := bufio.NewReader(r)
@@ -285,7 +286,7 @@ func newZlibMerger(w io.Writer) (*zlibMerger, error) {
 	if memInBuf == nil || memOutBuf == nil {
 		errMessage := C.errMessage()
 		return nil, fmt.Errorf("unable to malloc memory for inflating: %s",
-			unsafe.String((*byte)(unsafe.Pointer(errMessage)), int(C.strlen(errMessage))))
+			internal.UnsafeString((*byte)(unsafe.Pointer(errMessage)), int(C.strlen(errMessage))))
 	}
 
 	zm := &zlibMerger{
@@ -460,7 +461,8 @@ func (z *zlibMerger) concat(r io.Reader, isLastReader bool) (err error) {
 	z.adler32Sum = Adler32Combine(z.adler32Sum, adler32Checker.Sum32(), uncompressedSize64)
 
 	if isLastReader {
-		trailer := binary.BigEndian.AppendUint32(nil, z.adler32Sum)
+		trailer := make([]byte, 4)
+		binary.BigEndian.PutUint32(trailer, z.adler32Sum)
 		if _, err := z.w.Write(trailer); err != nil {
 			return fmt.Errorf("unable to output gzip trailer: %w", err)
 		}
