@@ -126,12 +126,13 @@ func ConcatZlib(w io.Writer, inputs ...io.Reader) error {
 		_, err := io.Copy(w, inputs[0])
 		return err
 	default:
-		gm, err := newZlibMerger(w)
+		zm, err := newZlibMerger(w)
 		if err != nil {
 			return fmt.Errorf("unable to write gzip header: %w", err)
 		}
+		defer zm.Close()
 		for i, r := range inputs {
-			if err = gm.concat(r, i == len(inputs)-1); err != nil {
+			if err = zm.concat(r, i == len(inputs)-1); err != nil {
 				return fmt.Errorf("unable to concat gzip: %w", err)
 			}
 		}
@@ -279,9 +280,20 @@ type zlibMerger struct {
 	zlibOutBuf unsafe.Pointer
 }
 
-func newZlibMerger(w io.Writer) (*zlibMerger, error) {
+func newZlibMerger(w io.Writer) (_ *zlibMerger, err error) {
 	memInBuf := C.malloc(BufSize)
 	memOutBuf := C.malloc(BufSize)
+
+	defer func() {
+		if err != nil {
+			if memInBuf != nil {
+				C.free(memInBuf)
+			}
+			if memOutBuf != nil {
+				C.free(memOutBuf)
+			}
+		}
+	}()
 
 	if memInBuf == nil || memOutBuf == nil {
 		errMessage := C.errMessage()
@@ -296,10 +308,22 @@ func newZlibMerger(w io.Writer) (*zlibMerger, error) {
 		w:          bufio.NewWriter(w),
 	}
 
-	if _, err := zm.w.Write(simpleZlibHeader); err != nil {
+	if _, err = zm.w.Write(simpleZlibHeader); err != nil {
 		return nil, fmt.Errorf("unable to write zlib header: %w", err)
 	}
 	return zm, nil
+}
+
+func (z *zlibMerger) Close() error {
+	if z.zlibInBuf != nil {
+		C.free(z.zlibInBuf)
+		z.zlibInBuf = nil
+	}
+	if z.zlibOutBuf != nil {
+		C.free(z.zlibOutBuf)
+		z.zlibOutBuf = nil
+	}
+	return nil
 }
 
 func (z *zlibMerger) concat(r io.Reader, isLastReader bool) (err error) {
@@ -354,11 +378,8 @@ func (z *zlibMerger) concat(r io.Reader, isLastReader bool) (err error) {
 		//fmt.Printf("%T, %T\n", stream.avail_in, stream.next_in)
 		ret := C.inflate(&stream, C.Z_BLOCK)
 
-		switch ret {
-		case C.Z_MEM_ERROR:
-			return fmt.Errorf("inflater return error code: %d(Z_MEM_ERROR)", int(C.Z_MEM_ERROR))
-		case C.Z_DATA_ERROR:
-			return fmt.Errorf("inflater return error code: %d(Z_DATA_ERROR)", int(C.Z_DATA_ERROR))
+		if errCode, ok := inflateErrors[int(ret)]; ok {
+			return fmt.Errorf("unable to inflate, error code: %d(%s)", int(ret), errCode)
 		}
 
 		uncompressedSize64 += int64(BufSize - stream.avail_out)
@@ -469,9 +490,6 @@ func (z *zlibMerger) concat(r io.Reader, isLastReader bool) (err error) {
 		if err = z.w.Flush(); err != nil {
 			return fmt.Errorf("unable to flush write buffer: %w", err)
 		}
-
-		C.free(z.zlibInBuf)
-		C.free(z.zlibOutBuf)
 	}
 
 	return nil

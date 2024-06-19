@@ -54,6 +54,7 @@ func ConcatGzip(w io.Writer, inputs ...io.Reader) error {
 		if err != nil {
 			return fmt.Errorf("unable to write gzip header: %w", err)
 		}
+		defer gm.Close()
 		for i, r := range inputs {
 			if err = gm.concat(r, i == len(inputs)-1); err != nil {
 				return fmt.Errorf("unable to concat gzip: %w", err)
@@ -155,9 +156,20 @@ type gzMerger struct {
 	checkSize32 uint32
 }
 
-func newGzMerger(w io.Writer) (*gzMerger, error) {
+func newGzMerger(w io.Writer) (_ *gzMerger, err error) {
 	inMemBuf := C.malloc(BufSize)
 	outMemBuf := C.malloc(BufSize)
+
+	defer func() {
+		if err != nil {
+			if inMemBuf != nil {
+				C.free(inMemBuf)
+			}
+			if outMemBuf != nil {
+				C.free(outMemBuf)
+			}
+		}
+	}()
 
 	if inMemBuf == nil || outMemBuf == nil {
 		errMessage := C.errMessage()
@@ -170,10 +182,22 @@ func newGzMerger(w io.Writer) (*gzMerger, error) {
 		zlibOutBuf: outMemBuf,
 		w:          bufio.NewWriter(w),
 	}
-	if _, err := gm.w.Write(simpleGzipHeader); err != nil {
+	if _, err = gm.w.Write(simpleGzipHeader); err != nil {
 		return nil, fmt.Errorf("unable to output gzip header: %w", err)
 	}
 	return gm, nil
+}
+
+func (g *gzMerger) Close() error {
+	if g.zlibInBuf != nil {
+		C.free(g.zlibInBuf)
+		g.zlibInBuf = nil
+	}
+	if g.zlibOutBuf != nil {
+		C.free(g.zlibOutBuf)
+		g.zlibOutBuf = nil
+	}
+	return nil
 }
 
 func (g *gzMerger) concat(r io.Reader, isLastReader bool) (err error) {
@@ -228,11 +252,8 @@ func (g *gzMerger) concat(r io.Reader, isLastReader bool) (err error) {
 		//fmt.Printf("%T, %T\n", stream.avail_in, stream.next_in)
 		ret := C.inflate(&stream, C.Z_BLOCK)
 
-		switch ret {
-		case C.Z_MEM_ERROR:
-			return fmt.Errorf("inflater return error code: %d(Z_MEM_ERROR)", int(C.Z_MEM_ERROR))
-		case C.Z_DATA_ERROR:
-			return fmt.Errorf("inflater return error code: %d(Z_DATA_ERROR)", int(C.Z_DATA_ERROR))
+		if errCode, ok := inflateErrors[int(ret)]; ok {
+			return fmt.Errorf("unable to inflate, error code: %d(%s)", int(ret), errCode)
 		}
 
 		uncompressedSize64 += int64(BufSize - stream.avail_out)
@@ -345,8 +366,6 @@ func (g *gzMerger) concat(r io.Reader, isLastReader bool) (err error) {
 		if err = g.w.Flush(); err != nil {
 			return fmt.Errorf("unable to flush write buffer: %w", err)
 		}
-		C.free(g.zlibInBuf)
-		C.free(g.zlibOutBuf)
 	}
 
 	return nil
