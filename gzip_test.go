@@ -278,6 +278,8 @@ func concatGzipGo(w io.Writer, inputs ...io.Reader) (err error) {
 	gw := gzip.NewWriter(w)
 	defer gw.Close()
 
+	buf := make([]byte, 16384)
+
 	for _, reader := range inputs {
 		if err = func() (err error) {
 			gr, err := gzip.NewReader(reader)
@@ -287,7 +289,7 @@ func concatGzipGo(w io.Writer, inputs ...io.Reader) (err error) {
 
 			defer gr.Close()
 
-			if _, err = io.Copy(gw, gr); err != nil {
+			if _, err = io.CopyBuffer(gw, gr, buf); err != nil {
 				return fmt.Errorf("copy: %w", err)
 			}
 			return nil
@@ -322,103 +324,74 @@ func generateGzOut(uncompressedLen int) []byte {
 }
 
 func BenchmarkConcatGzip(b *testing.B) {
-	gz1 := generateGzOut(rand.Intn(1<<26) + math.MaxUint16)
-	gz2 := generateGzOut(rand.Intn(1<<26) + math.MaxUint16)
-	gz3 := generateGzOut(rand.Intn(1<<27) + math.MaxUint16)
-	gz4 := generateGzOut(rand.Intn(1<<27) + math.MaxUint16)
+	gz1, err := os.Open("./testdata/1.gz")
+	if err != nil {
+		b.Fatal(err)
+	}
+	defer gz1.Close()
 
-	b.Run("concatGzip-go", func(b *testing.B) {
+	gz2, err := os.Open("./testdata/2.gz")
+	if err != nil {
+		b.Fatal(err)
+	}
+	defer gz2.Close()
+
+	gz3, err := os.Open("./testdata/3.gz")
+	if err != nil {
+		b.Fatal(err)
+	}
+	defer gz3.Close()
+
+	gz4, err := os.Open("./testdata/4.gz")
+	if err != nil {
+		b.Fatal(err)
+	}
+	defer gz4.Close()
+
+	gz5, err := os.Open("./testdata/5.gz")
+	if err != nil {
+		b.Fatal(err)
+	}
+	defer gz5.Close()
+
+	gz6, err := os.Open("./testdata/6.gz")
+	if err != nil {
+		b.Fatal(err)
+	}
+	defer gz6.Close()
+
+	b.Run("concat-standard-go", func(b *testing.B) {
 
 		for i := 0; i < b.N; i++ {
-			if err := concatGzipGo(io.Discard, bytes.NewReader(gz1), bytes.NewReader(gz2), bytes.NewReader(gz3), bytes.NewReader(gz4)); err != nil {
+			gz1.Seek(0, io.SeekStart)
+			gz2.Seek(0, io.SeekStart)
+			gz3.Seek(0, io.SeekStart)
+			gz4.Seek(0, io.SeekStart)
+			gz5.Seek(0, io.SeekStart)
+			gz6.Seek(0, io.SeekStart)
+
+			if err := concatGzipGo(io.Discard, gz1, gz2, gz3, gz4, gz5, gz6); err != nil {
 				b.Fatalf("concat: %v", err)
 			}
 		}
 
 	})
 
-	b.Run("concatGzip-zlib", func(b *testing.B) {
+	b.Run("concat-deflatejoin", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
+			gz1.Seek(0, io.SeekStart)
+			gz2.Seek(0, io.SeekStart)
+			gz3.Seek(0, io.SeekStart)
+			gz4.Seek(0, io.SeekStart)
+			gz5.Seek(0, io.SeekStart)
+			gz6.Seek(0, io.SeekStart)
 
-			if err := ConcatGzip(io.Discard, bytes.NewReader(gz1), bytes.NewReader(gz2), bytes.NewReader(gz3), bytes.NewReader(gz4)); err != nil {
+			if err := ConcatGzip(io.Discard, gz1, gz2, gz3, gz4, gz5, gz6); err != nil {
 				b.Fatalf("concat: %v", err)
 			}
 		}
 	})
 
-}
-
-func goUngzip(r io.Reader) (_ []byte, err error) {
-	gr, err := gzip.NewReader(r)
-	if err != nil {
-		return nil, fmt.Errorf("unable to new: %w", err)
-	}
-	defer func() {
-		if ex := gr.Close(); ex != nil && err == nil {
-			err = ex
-			return
-		}
-	}()
-	uncompressed, err := io.ReadAll(gr)
-	if err != nil {
-		return nil, fmt.Errorf("unable to ungzip: %w", err)
-	}
-	return uncompressed, nil
-}
-
-func cgoUngzip(r io.Reader) (_ []byte, err error) {
-	gr, err := NewGzipReader(r)
-	if err != nil {
-		return nil, fmt.Errorf("new: %w", err)
-	}
-	defer func() {
-		if ex := gr.Close(); ex != nil && err == nil {
-			err = ex
-			return
-		}
-	}()
-	uncompressed, err := io.ReadAll(gr)
-	if err != nil {
-		return nil, fmt.Errorf("fail to ungzip: %w", err)
-	}
-	return uncompressed, nil
-}
-
-func BenchmarkNewGzipReader(b *testing.B) {
-	gzipOut := new(bytes.Buffer)
-	gw := gzip.NewWriter(gzipOut)
-	if _, err := io.CopyN(gw, crand.Reader, int64(rand.Intn(1<<27)+math.MaxUint16)); err != nil {
-		b.Fatalf("unable to read: %v", err)
-	}
-	if err := gw.Close(); err != nil {
-		b.Fatalf("unable to finish gzip: %v", err)
-	}
-
-	outBytes := gzipOut.Bytes()
-
-	var cgoOut, goOut []byte
-	var err error
-	b.Run("cgoUngzip", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			cgoOut, err = cgoUngzip(bytes.NewReader(outBytes))
-			if err != nil {
-				b.Fatal(err)
-			}
-		}
-	})
-
-	b.Run("goUngzip", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			goOut, err = goUngzip(bytes.NewReader(outBytes))
-			if err != nil {
-				b.Fatal(err)
-			}
-		}
-	})
-
-	if bytes.Compare(cgoOut, goOut) != 0 {
-		b.Fatalf("the uncompression out is not same")
-	}
 }
 
 func TestCGOTest(t *testing.T) {

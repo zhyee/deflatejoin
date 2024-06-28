@@ -16,8 +16,6 @@ import (
 
 /*
 #cgo CFLAGS: -I${SRCDIR}/zlib
-#cgo amd64 LDFLAGS: -L${SRCDIR}/zlib/amd64
-#cgo arm64 LDFLAGS: -L${SRCDIR}/zlib/arm64
 #cgo LDFLAGS: -lz
 #include "dfjoin.h"
 */
