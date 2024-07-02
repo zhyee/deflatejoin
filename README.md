@@ -83,28 +83,61 @@ BenchmarkConcatGzip/concat-deflatejoin-8                     100          107840
 
 ## Cross compilation
 
-It's recommended to build executable binaries on Docker for various platforms, or
+It's recommended to build on Docker for various targets, or
 you can use the gcc cross-compilation toolchains for the specified target to build 
 zlib and your project, for example, on an Ubuntu 22.04 would be like:
 
 ```shell
 # build zlib static library for linux/arm64
-CC=aarch64-linux-gnu-gcc AR=aarch64-linux-gnu-ar ./configure --prefix=/usr/local/zlib-arm64 --static && make clean && make && make install
+CC=aarch64-linux-gnu-gcc AR=aarch64-linux-gnu-ar \
+./configure --prefix=/usr/local/zlib-arm64 --static \
+&& make clean && make && make install
 # build your project for linux/arm64
-CC=aarch64-linux-gnu-gcc CGO_ENABLED='1' CGO_CFLAGS='-O2 -g -I/usr/local/zlib-arm64/include' CGO_LDFLAGS='-O2 -g -L/usr/local/zlib-arm64/lib' GOOS=linux GOARCH=arm64 go build
+CC=aarch64-linux-gnu-gcc \
+CGO_ENABLED='1' \
+CGO_CFLAGS='-O2 -g -I/usr/local/zlib-arm64/include' \
+CGO_LDFLAGS='-O2 -g -L/usr/local/zlib-arm64/lib' \
+GOOS=linux \
+GOARCH=arm64 go build
 
 # build zlib static library for linux/amd64
-CC=x86_64-linux-gnu-gcc AR=x86_64-linux-gnu-ar ./configure --prefix=/usr/local/zlib-x64 --static && make clean && make && make install
+CC=x86_64-linux-gnu-gcc AR=x86_64-linux-gnu-ar \
+./configure --prefix=/usr/local/zlib-x64 --static \
+&& make clean && make && make install
 # build your project for linux/amd64
-CC=x86_64-linux-gnu-gcc CGO_ENABLED='1' CGO_CFLAGS='-O2 -g -I/usr/local/zlib-x64/include' CGO_LDFLAGS='-O2 -g -L/usr/local/zlib-x64/lib' GOOS=linux GOARCH=amd64 go build
+CC=x86_64-linux-gnu-gcc \
+CGO_ENABLED='1' \
+CGO_CFLAGS='-O2 -g -I/usr/local/zlib-x64/include' \
+CGO_LDFLAGS='-O2 -g -L/usr/local/zlib-x64/lib' \
+GOOS=linux \
+GOARCH=amd64 go build
 
 # build zlib static library for windows/x86-64
-CC=x86_64-w64-mingw32-gcc AR=x86_64-w64-mingw32-ar ./configure --prefix=/usr/local/zlib-win64 --static && make clean && make && make install
+CC=x86_64-w64-mingw32-gcc AR=x86_64-w64-mingw32-ar \
+./configure --prefix=/usr/local/zlib-win64 --static \
+&& make clean && make && make install
 # build your project for windows/x86-64
-CC=x86_64-w64-mingw32-gcc CGO_ENABLED='1' CGO_CFLAGS='-O2 -g -I/usr/local/zlib-win64/include' CGO_LDFLAGS='-O2 -g -L/usr/local/zlib-win64/lib' GOOS=windows GOARCH=amd64 go build
+CC=x86_64-w64-mingw32-gcc \
+CGO_ENABLED='1' \
+CGO_CFLAGS='-O2 -g -I/usr/local/zlib-win64/include' \
+CGO_LDFLAGS='-O2 -g -L/usr/local/zlib-win64/lib' \
+GOOS=windows \
+GOARCH=amd64 go build
 
 # build zlib static library for windows/x86
-CC=i686-w64-mingw32-gcc AR=i686-w64-mingw32-ar ./configure --prefix=/usr/local/zlib-win32 --static && make clean && make && make install
+CC=i686-w64-mingw32-gcc AR=i686-w64-mingw32-ar \
+./configure --prefix=/usr/local/zlib-win32 --static \
+&& make clean && make && make install
 # build your project for windows/x86
-CC=i686-w64-mingw32-gcc CGO_ENABLED='1' CGO_CFLAGS='-O2 -g -I/usr/local/zlib-win32/include' CGO_LDFLAGS='-O2 -g -L/usr/local/zlib-win32/lib' GOOS=windows GOARCH=386 go build
+CC=i686-w64-mingw32-gcc \
+CGO_ENABLED='1' \
+CGO_CFLAGS='-O2 -g -I/usr/local/zlib-win32/include' \
+CGO_LDFLAGS='-O2 -g -L/usr/local/zlib-win32/lib' \
+GOOS=windows \
+GOARCH=386 go build
 ```
+for darwin/amd64, darwin/arm64, linux/386, linux/adm64, linux/arm64, 
+linux/mips64, linux/mips64le, linux/ppc64, linux/ppc64le, windows/386, 
+windows/amd64 targets, prebuilt zlib static libraries have been bundled 
+into this package, so you don't need to build it by yourself, refer to [zlib](./zlib) 
+directory for details.
