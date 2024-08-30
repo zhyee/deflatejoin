@@ -128,12 +128,12 @@ func ConcatZlib(w io.Writer, inputs ...io.Reader) error {
 	default:
 		zm, err := newZlibMerger(w)
 		if err != nil {
-			return fmt.Errorf("unable to write gzip header: %w", err)
+			return fmt.Errorf("unable to write zlib header: %w", err)
 		}
 		defer zm.Close()
 		for i, r := range inputs {
 			if err = zm.concat(r, i == len(inputs)-1); err != nil {
-				return fmt.Errorf("unable to concat gzip: %w", err)
+				return fmt.Errorf("unable to concat zlib: %w", err)
 			}
 		}
 	}
@@ -195,7 +195,7 @@ func (z *zlibReader) Read(p []byte) (n int, err error) {
 			)
 			checksumBytes := make([]byte, 4)
 			if _, ex := io.ReadFull(unRead, checksumBytes); ex != nil {
-				err = fmt.Errorf("unable to read gzip trailer: %w", ex)
+				err = fmt.Errorf("unable to read zlib trailer: %w", ex)
 				return
 			}
 
@@ -267,7 +267,7 @@ func NewZlibReader(r io.Reader) (io.ReadCloser, error) {
 	}
 	if _, err := zl.readHeader(); err != nil {
 		_ = zl.Close()
-		return nil, fmt.Errorf("unable to read gzip header data: %w", err)
+		return nil, fmt.Errorf("unable to read zlib header data: %w", err)
 	}
 
 	return zl, nil
@@ -329,7 +329,7 @@ func (z *zlibMerger) Close() error {
 func (z *zlibMerger) concat(r io.Reader, isLastReader bool) (err error) {
 	br := bufio.NewReader(r)
 	if _, err = readZlibHeader(br); err != nil {
-		return fmt.Errorf("unable to skip the gzip header: %w", err)
+		return fmt.Errorf("unable to skip the zlib header: %w", err)
 	}
 
 	var stream C.z_stream
@@ -485,7 +485,7 @@ func (z *zlibMerger) concat(r io.Reader, isLastReader bool) (err error) {
 		trailer := make([]byte, 4)
 		binary.BigEndian.PutUint32(trailer, z.adler32Sum)
 		if _, err := z.w.Write(trailer); err != nil {
-			return fmt.Errorf("unable to output gzip trailer: %w", err)
+			return fmt.Errorf("unable to output zlib trailer: %w", err)
 		}
 		if err = z.w.Flush(); err != nil {
 			return fmt.Errorf("unable to flush write buffer: %w", err)
