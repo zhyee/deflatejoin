@@ -14,7 +14,12 @@ var x2nTable = [32]uint32{
 	0xc40ba6d0, 0xc4e22c3c,
 }
 
+// IEEECrc32Combine combines IEEE CRC-32 checksums. crc2SourceLen is the
+// uncompressed length of the second input and must be nonnegative; otherwise it panics.
 func IEEECrc32Combine(crc1, crc2 uint32, crc2SourceLen int64) uint32 {
+	if crc2SourceLen < 0 {
+		panic("deflatejoin: negative source length")
+	}
 	return crc32MultiMod(crc32X2nMod(crc2SourceLen, 3), crc1) ^ (crc2 & 0xffffffff)
 }
 
@@ -54,7 +59,12 @@ func crc32X2nMod(n int64, k uint) uint32 {
 	return p
 }
 
+// Adler32Combine combines Adler-32 checksums. adler2SourceLen must be
+// nonnegative; otherwise it panics.
 func Adler32Combine(adler1, adler2 uint32, adler2SourceLen int64) uint32 {
+	if adler2SourceLen < 0 {
+		panic("deflatejoin: negative source length")
+	}
 	adler2SourceLen %= AdlerBase
 	sum1 := adler1 & 0xffff
 	sum2 := uint32(adler2SourceLen) * sum1

@@ -1,0 +1,98 @@
+{
+  "header_version": "1.3.1",
+  "provenance": "Inventory of existing repository artifacts; historical source revision, compiler and build flags are unknown. Header version is not proof of each binary version.",
+  "headers_sha256": {
+    "zlib.h": "8a5579af72ea4f427ff00a4150f0ccb3fc5c1e4379f726e101133b1ab9fc600c",
+    "zconf.h": "44e543ff4514c7a9a01d648019c2c9a81d1105cbfa3c77f1faf6cd86eafa8abd"
+  },
+  "archives": [
+    {
+      "target": "darwin-amd64",
+      "file": "darwin-amd64/libz.a",
+      "sha256": "f398ac14c6968e3d76f32c0a0886e48648ff05d2606bf75a143412a330d10ec7",
+      "source_revision": null,
+      "compiler": null,
+      "build_flags": null
+    },
+    {
+      "target": "darwin-arm64",
+      "file": "darwin-arm64/libz.a",
+      "sha256": "37c6f1753e93aefd1e2d3496afe7c23f2b17f01ffa624b4504fcb301c58ed791",
+      "source_revision": null,
+      "compiler": null,
+      "build_flags": null
+    },
+    {
+      "target": "linux-386",
+      "file": "linux-386/libz.a",
+      "sha256": "07eb2c0c464c125813f31ee2ef15120f1561a99612b7ace64988e79c24106442",
+      "source_revision": null,
+      "compiler": null,
+      "build_flags": null
+    },
+    {
+      "target": "linux-amd64",
+      "file": "linux-amd64/libz.a",
+      "sha256": "026c8850d017f4cd90c73a600c02eb3fb84b2df2eccdb939b1b91ada406de03e",
+      "source_revision": null,
+      "compiler": null,
+      "build_flags": null
+    },
+    {
+      "target": "linux-arm64",
+      "file": "linux-arm64/libz.a",
+      "sha256": "1a1509411c043f6fea45c3bd01b0eb4455bf64c3d139dfec8634b9df7b65f859",
+      "source_revision": null,
+      "compiler": null,
+      "build_flags": null
+    },
+    {
+      "target": "linux-mips64",
+      "file": "linux-mips64/libz.a",
+      "sha256": "810a1b7c072f55ff16ab24929e053cf1111c4c3ae8293337a07fe3a3d50c2546",
+      "source_revision": null,
+      "compiler": null,
+      "build_flags": null
+    },
+    {
+      "target": "linux-mips64le",
+      "file": "linux-mips64le/libz.a",
+      "sha256": "d47705c6c5423b8b6d6e33de65bc1c65916ab8297d0c842030d1686ff729d99f",
+      "source_revision": null,
+      "compiler": null,
+      "build_flags": null
+    },
+    {
+      "target": "linux-ppc64",
+      "file": "linux-ppc64/libz.a",
+      "sha256": "0b1c2c84e4346832bae903eb46dae890d927e487f9161514bf9d54568c5ad929",
+      "source_revision": null,
+      "compiler": null,
+      "build_flags": null
+    },
+    {
+      "target": "linux-ppc64le",
+      "file": "linux-ppc64le/libz.a",
+      "sha256": "143b4f508ea4ccdbd4a5b3592ba47cf9079a2c7c444b78dbf257f342fceb27b0",
+      "source_revision": null,
+      "compiler": null,
+      "build_flags": null
+    },
+    {
+      "target": "windows-386",
+      "file": "windows-386/libz.a",
+      "sha256": "13a6b79463662a8d877b505ed304cdfb30a44922dc3ab6d3fd55935784017fcd",
+      "source_revision": null,
+      "compiler": null,
+      "build_flags": null
+    },
+    {
+      "target": "windows-amd64",
+      "file": "windows-amd64/libz.a",
+      "sha256": "15032a73535768be7b079c86495e8893a0ad9e28d722f2c6b2d9b202c072ed61",
+      "source_revision": null,
+      "compiler": null,
+      "build_flags": null
+    }
+  ]
+}

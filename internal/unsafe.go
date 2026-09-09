@@ -1,14 +1,9 @@
 package internal
 
-import (
-	"reflect"
-	"unsafe"
-)
+import "unsafe"
 
+// UnsafeString copies length bytes from ptr into a Go-owned string.
+// The caller must keep ptr valid throughout the call.
 func UnsafeString(ptr *byte, length int) string {
-	sh := reflect.StringHeader{
-		Data: uintptr(unsafe.Pointer(ptr)),
-		Len:  length,
-	}
-	return *(*string)(unsafe.Pointer(&sh))
+	return string(unsafe.Slice(ptr, length))
 }

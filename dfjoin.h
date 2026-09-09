@@ -3,12 +3,10 @@
 
 #include "zlib.h"
 #include <stdlib.h>
-#include <errno.h>
-#include <string.h>
 
 //see https://github.com/madler/zlib/blob/develop/examples/gzjoin.c
 
 int initStream(z_stream *stream);
-char *errMessage();
+int inflateStream(z_stream *stream, int flush, int strict_window);
 
 #endif /* _HEADER_DFJOIN_H */
